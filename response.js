@@ -82,13 +82,13 @@ export default class Response {
     unAuthorized(errormessage = '') { return this.status(401, errormessage); }    // unAuthorized status
     forbidden(errormessage = '') { return this.status(403, errormessage); }       // forbidden status
     notFound(errormessage = '') { return this.status(404, errormessage); }        // not found status
-    notAloud(errormessage = '') { return this.status(405, errormessage); }        // Method not aloud status
+    notAloud(errormessage = '') { return this.status(405, errormessage); }        // Method not allowed status
     conflict(errormessage = '') { return this.status(409, errormessage); }        // Conflict status
     unsupported(errormessage = '') { return this.status(415, errormessage); }     // Unsupported Media Type status
     unprocessable(errormessage = '') { return this.status(422, errormessage); }   // Unprocessable Entity status
 
     // Custom status
-    unverifiedUser(errormessage = '') { return this.status(480, errormessage); }    // custom bad request status
+    unverifiedUser(errormessage = '') { return this.status(480, errormessage); }  // custom bad request status
     userNotFound(errormessage = '') { return this.status(481, errormessage); }    // custom bad request status
     wrongPassword(errormessage = '') { return this.status(482, errormessage); }   // custom bad request status
 
