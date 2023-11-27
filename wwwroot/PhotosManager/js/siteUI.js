@@ -2,11 +2,11 @@
 
 let contentScrollPosition = 0;
 Init_UI();
-let user;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Views rendering
 async function Init_UI() {
-    user = await API.retrieveLoggedUser();
+    renderLoginForm("", "", "");
+    /*
     if (user == null) {
         renderLoginForm();
     }
@@ -87,12 +87,15 @@ async function login(Email, Password) {
 
 
 async function verifyLoggedUser() {
+    let user = await API.retrieveLoggedUser();
     console.log(user.VerifyCode);
-    if (user.VerifyCode == "unverified") {
-        renderVerify(user.Id, "");
-    }
-    else {
-        renderPhotoManager();
+    if (user !== null) {
+        if (user.VerifyCode == "unverified") {
+            renderVerify(user.Id, "");
+        }
+        else {
+            renderPhotoManager();
+        }
     }
 
 }
@@ -153,6 +156,7 @@ function renderError() {
     });
 }
 async function renderLoginForm(message = "", emailError = "", pwdError = "") {
+    let user = await API.retrieveLoggedUser();
     if (user != null) {
         await API.logout();
     }
@@ -195,10 +199,12 @@ async function renderLoginForm(message = "", emailError = "", pwdError = "") {
         renderCreateProfil();
     });
     $('#loginForm').on("submit", async function (event) {
-        let Email = $("#emailLogin").val();
-        let Password = $("#passwordLogin").val();
-        login(Email, Password);
+        // let Email = $("#emailLogin").val();
+        // let Password = $("#passwordLogin").val();
+        let user = getFormData('#loginform')
+        console.log(user);
         event.preventDefault();// empêcher le fureteur de soumettre une requête de soumission 
+        login(user.email, user.password);
     });
 }
 function renderCreateProfil() {
@@ -314,7 +320,7 @@ function updateHeader(title, type) {
     </div>`
         ))
         $('#loginCmd').on("click", function () {
-            renderLoginForm();
+            renderLoginForm("", "", "");
         });
         $('#aboutCmd').on("click", function () {
             renderAbout();
