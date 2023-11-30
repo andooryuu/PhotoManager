@@ -1,5 +1,3 @@
-////////////////////////////////////////////// API photos_APIs call ///////////////////////////////////////////////////////
-
 const serverHost = "http://localhost:5000";
 const photos_API = "/api/photos";
 
@@ -33,7 +31,6 @@ class API {
         let user = JSON.parse(sessionStorage.getItem('user'));
         return user;
     }
-
     static eraseLoggedUser() {
         sessionStorage.removeItem('user');
     }
@@ -75,25 +72,11 @@ class API {
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(profil),
-                success: profil => { resolve(profil);/* API.sendVerificationEmail(profil);*/ },
-                error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
-            });
-        });
-    }
-    static sendVerificationEmail(profil) {
-        API.initHttpState();
-        return new Promise(resolve => {
-            $.ajax({
-                url: serverHost + "/accounts/sendVerificationEmail",
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(profil),
                 success: profil => { resolve(profil); },
                 error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
             });
         });
     }
-
     static login(Email, Password) {
         API.initHttpState();
         return new Promise(resolve => {

@@ -24,5 +24,18 @@
             "writeAccess": 2
         },
         "VerifyCode": "verified"
+    },
+    {
+        "Id": "86a43c00-8e42-11ee-bd22-59a609e97969",
+        "Email": "andrew.kartsakis@outlook.com",
+        "Password": "password",
+        "Name": "Andrew",
+        "Avatar": "79129970-8fc7-11ee-a821-1924074edc3d.webp",
+        "Created": 1701379739,
+        "Authorizations": {
+            "readAccess": 1,
+            "writeAccess": 1
+        },
+        "VerifyCode": "verified"
     }
 ]
