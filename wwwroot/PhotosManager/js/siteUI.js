@@ -275,7 +275,7 @@ async function renderDeleteAccount(id) {
         event.preventDefault();// empêcher le fureteur de soumettre une requête de soumission
         showWaitingGif(); // afficher GIF d’attente
         await API.unsubscribeAccount(id);
-        renderLoginForm("", "", "");
+        renderLoginForm("Votre compte a été retiré", "", "");
     });
 }
 async function renderLoginForm(message = "", emailError = "", pwdError = "") {
