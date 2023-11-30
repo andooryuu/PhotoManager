@@ -74,7 +74,7 @@ export default class Controller {
             this.HttpContext.response.unAuthorized("Unauthorized access");
     }
     remove(id) {
-        if (Authorizations.writeGranted(this.HttpContext, this.authorizations)) {
+        if (Authorizations.writeGranted(this.HttpContext, this.authorizations) || Authorizations.writeGranted(this.HttpContext, this.authorizations) ) {
             if (this.repository != null) {
                 if (this.HttpContext.path.id) {
                     if (this.repository.remove(id))

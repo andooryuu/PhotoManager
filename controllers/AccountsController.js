@@ -54,6 +54,8 @@ export default class AccountsController extends Controller {
         }
     }
 
+
+
     sendVerificationEmail(user) {
         let html = `
                 Bonjour ${user.Name}, <br /> <br />
@@ -122,7 +124,8 @@ export default class AccountsController extends Controller {
             let newUser = this.repository.add(user);
             if (this.repository.model.state.isValid) {
                 this.HttpContext.response.created(newUser);
-                this.sendVerificationEmail(newUser);
+                this.sendVerificationEmail(user);// Demander s'il faut changer this.sendVerificationEmail(newUser) par this.sendVerificationEmail(user)
+
             } else {
                 if (this.repository.model.state.inConflict)
                     this.HttpContext.response.conflict(this.repository.model.state.errors);
