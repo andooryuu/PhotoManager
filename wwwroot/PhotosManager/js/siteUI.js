@@ -110,12 +110,14 @@ async function verifyCode(code) {
     }
 }
 function renderPhotoManager() {
+    initTimeout();/////////
     updateHeader("Liste des photos", "photoManager");
     eraseContent();
     $("#content").append("<h3>En construction...</h3>")
 
 }
 function renderVerify(message = "") {
+    timeout(); /////////
     let messageError = message;
     eraseContent();
     updateHeader("Vérification", "verify");
@@ -162,6 +164,7 @@ function renderError() {
     });
 }
 async function renderModify() {
+    timeout(); /////////
     let user = await API.retrieveLoggedUser();
     updateHeader("Profil", "modifierProfil");
     eraseContent();
