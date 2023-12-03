@@ -1,5 +1,6 @@
 
 
+
 let contentScrollPosition = 0;
 Init_UI();
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,8 +91,14 @@ async function login(Email, Password) {
 async function verifyLoggedUser() {
     let user = await API.retrieveLoggedUser();
     console.log(user.VerifyCode);
+    console.log(user.Authorizations);
+
     if (user !== null) {
-        if (user.VerifyCode == "verified") {
+        if (user.Authorizations.writeAccess == 0 && user.Authorizations.writeAccess == 0) {
+            API.logout();
+            renderLoginForm("Votre compte est bloqué!");
+        }
+        else if (user.VerifyCode == "verified") {
             renderPhotoManager();
         }
         else {
@@ -110,14 +117,21 @@ async function verifyCode(code) {
     }
 }
 function renderPhotoManager() {
-    initTimeout();/////////
-    updateHeader("Liste des photos", "photoManager");
+    let user = API.retrieveLoggedUser();
+
+    if (user.Authorizations.readAccess == 2 && user.Authorizations.writeAccess == 2) {
+        updateHeader("Liste des photos", "photoManagerAdmin", user);
+
+    }
+    else {
+        updateHeader("Liste des photos", "photoManager", user);
+    }
+
     eraseContent();
     $("#content").append("<h3>En construction...</h3>")
 
 }
 function renderVerify(message = "") {
-    timeout(); /////////
     let messageError = message;
     eraseContent();
     updateHeader("Vérification", "verify");
@@ -134,8 +148,8 @@ function renderVerify(message = "") {
     InvalidMessage = 'Code invalide'
     placeholder="Code de vérification de courriel">
     <span style='color:red'>${messageError}</span>
+    <button class="form-control btn-primary"  style="margin-top:25px" id="verifyCmd">Vérifier</button>
     </form>
-    <button class="form-control btn-primary" id="verifyCmd">Vérifier</button>
     </div>
     </div>`);
     initFormValidation();
@@ -164,9 +178,8 @@ function renderError() {
     });
 }
 async function renderModify() {
-    timeout(); /////////
     let user = await API.retrieveLoggedUser();
-    updateHeader("Profil", "modifierProfil");
+    updateHeader("Profil", "modifierProfil", user);
     eraseContent();
     $("#content").append(`
     <form class="form" id="createProfilForm"'>
@@ -262,9 +275,137 @@ async function renderModify() {
         renderPhotoManager();
     });
 }
-async function renderDeleteAccount(id) {
+function renderUser(User) {
+    let admin = false;
+    let blocked = false;
+    if (User.Authorizations.writeAccess == 2 && User.Authorizations.readAccess == 2) {
+        admin = true
+    }
+    else if (User.Authorizations.writeAccess == 0 && User.Authorizations.readAccess == 0 && User.VerifyCode == "verified") {
+        blocked = true
+    }
+    let adminIcon = admin ? "fas fa-user-cog" : "fas fa-user-alt";
+    let blockedIcon = blocked ? "fa fa-ban redCmd" : "fa-regular fa-circle greenCmd";
+    return $(`
+    <div class="UserRow" User_id=${User.Id}">
+    <div class="UserContainer">
+        <div class="UserLayout">
+        <div class="UserAvatar" style="background-image:url('${User.Avatar}')"></div>
+            <div class="UserInfo">
+                <span class="UserName">${User.Name}</span>
+                <span class="UserEmail">${User.Email}</span>
+            </div>
+        </div>
+        <div class="UserCommandPanel">
+            <span class="dodgerblueCmd ${adminIcon}"editUserId="${User.Id}" title="Modifier ${User.Name}"></span>
+            <span class="${blockedIcon}"blockUserId="${User.Id}" title="Modifier ${User.Name}"></span>
+            <span class="fas fa-user-slash goldenrodCmd" deleteUserId="${User.Id}" title="Effacer ${User.Name}"></span>
+        </div>
+    </div>
+</div>`);
+}
+async function renderManageUser() {
     eraseContent();
-    updateHeader("Retrait de compte", "deleteAccount");
+    updateHeader("Gestion des usagers", "deleteAccountAdmin");
+    let loggedUserId = await API.retrieveLoggedUser().Id;
+    let users = await API.GetAccounts();
+    if (users != null) {
+        if (loggedUserId != null) {
+            users.data.forEach((user) => {
+                if (user.Id != loggedUserId)
+                    $("#content").append(renderUser(user));
+            });
+        }
+        $('.greenCmd').on("click", async function (event) {
+            var id = $(this).attr("blockUserId");
+
+            if (await API.blockUser(id)) {
+                renderManageUser();
+            }
+            else {
+                console.log("Error");
+            }
+        });
+        $('.redCmd').on("click", async function (event) {
+            var id = $(this).attr("blockUserId");
+            if (await API.unblockUser(id)) {
+                renderManageUser();
+            }
+            else {
+                console.log("Error");
+            }
+        });
+        $('.dodgerblueCmd').on("click", async function (event) {
+            var id = $(this).attr("editUserId");
+            var className = $(this).attr("class");
+            var isAdmin = className.includes("fas fa-user-cog");
+
+            if (!isAdmin) {
+                if (await API.promoteUser(id)) {
+                    renderManageUser();
+                }
+                else {
+                    console.log('Erreur!')
+                }
+            }
+
+            else {
+                if (await API.demote(id)) {
+                    renderManageUser();
+                }
+                else {
+                    console.log("Error")
+                }
+            }
+        });
+        $('.goldenrodCmd').on("click", async function (event) {
+            var id = $(this).attr("deleteUserId");
+            renderDeleteAccountAdmin(id);
+        });
+    }
+
+}
+async function renderDeleteAccountAdmin(id) {
+
+    eraseContent();
+    updateHeader("Retrait de compte", "deleteAccountAdmin");
+    let User = await API.GetAccount(id);
+    console.log(User)
+    if (User != null) {
+        $("#content").append(`<div class="content" style="text-align:center">
+        <h4 style="margin-top:30px">Voulez-vous vraiment effacer cet usager et toutes ses photos?</h4>
+            <div class="UserLayoutDelete">
+            <div class="UserAvatar" style="background-image:url('${User.user.Avatar}')"></div>
+            <div class="UserInfo">
+                    <span class="UserName">${User.user.Name}</span>
+                    <span class="UserEmail">${User.user.Email}</span>
+                </div>
+            </div>
+        <div class="form">
+            <button class="form-control btn-danger" id="deleteCmd">Effacer mon compte</button>
+        </div>
+        <div class="form">
+            <button class="form-control btn-secondary" id="cancelCmd">Annuler</button>
+        </div>
+    </div>`);
+        $('#deleteCmd').on("click", async function (event) {
+            event.preventDefault();// empêcher le fureteur de soumettre une requête de soumission
+            showWaitingGif(); // afficher GIF d’attente
+            await API.unsubscribeAccount(id);
+            renderManageUser();
+        });
+        $('#cancelCmd').on("click", function (event) {
+            renderManageUser();
+        })
+    }
+    else {
+        console.log("Error");
+    }
+}
+async function renderDeleteAccount(id) {
+    let user = API.retrieveLoggedUser();
+    eraseContent();
+    updateHeader("Retrait de compte", "deleteAccount", user);
     $("#content").append(`<div class="content" style="text-align:center">
     <h4 style="margin-top:30px">Voulez-vous vraiment effacer votre compte?</h4>
     <div class="form">
@@ -280,6 +421,9 @@ async function renderDeleteAccount(id) {
         await API.unsubscribeAccount(id);
         renderLoginForm("Votre compte a été retiré", "", "");
     });
+    $('#cancelCmd').on("click", function (event) {
+        renderPhotoManager();
+    })
 }
 async function renderLoginForm(message = "", emailError = "", pwdError = "") {
     eraseContent();
@@ -299,7 +443,7 @@ async function renderLoginForm(message = "", emailError = "", pwdError = "") {
     required
     RequireMessage = 'Veuillez entrer votre courriel'
     InvalidMessage = 'Courriel invalide'
-    placeholder="adresse de courriel"
+    placeholder="adresse de courriel" 
     value='${Email}'>
     <span style='color:red'>${EmailError}</span>
     <input type='password'
@@ -421,7 +565,7 @@ function renderCreateProfil() {
         createProfil(profil); // commander la création au service API
     });
 }
-function updateHeader(title, type) {
+function updateHeader(title, type, user) {
     eraseHeader();
     if (type == "about" || type == "login" || type == "createProfil" || type == "error" || type == "verify") {
         $('#header').append($(`
@@ -453,7 +597,7 @@ function updateHeader(title, type) {
     else if (type == "photoManager" || type == "modifierProfil" || type == "deleteAccount") {
         $('#header').append($(`
             <img id='photoTitleContainer' src='./favicon.ico' /><h2>${title}</h2>
-        
+            <div class="UserAvatarSmall" style="background-image:url('${user.Avatar}')"></div>
             <div class="dropdown ms-auto">
             <div data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="cmdIcon fa fa-ellipsis-vertical"></i>
@@ -505,7 +649,7 @@ function updateHeader(title, type) {
             renderModify();
         });
         $('#listPhotosMenuCmd').on("click", function () {
-
+            renderPhotoManager();
         });
         $('#sortByDateCmd').on("click", function () {
 
@@ -523,10 +667,17 @@ function updateHeader(title, type) {
             renderAbout();
         });
     }
-    else if (type == "photoManagerAdmin") {
+    else if (type == "photoManagerAdmin" || type == "deleteAccountAdmin") {
+        let image = "";
+        if (type == "deleteAccountAdmin") {
+            image = "images/adminLogo.png";
+        } else {
+            image = user.Avatar;
+        }
         $('#header').append($(`
+
             <img id='photoTitleContainer' src='./favicon.ico' /><h2>${title}</h2>
-        
+            <div class="UserAvatarSmall" style="background-image:url('${image}')"></div>
             <div class="dropdown ms-auto">
             <div data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="cmdIcon fa fa-ellipsis-vertical"></i>
@@ -576,7 +727,7 @@ function updateHeader(title, type) {
            `
         ))
         $('#manageUserCm').on("click", function () {
-
+            renderManageUser();
         });
         $('#logoutCmd').on("click", function () {
             API.logout();
@@ -586,7 +737,7 @@ function updateHeader(title, type) {
             renderModify();
         });
         $('#listPhotosMenuCmd').on("click", function () {
-
+            renderPhotoManager();
         });
         $('#sortByDateCmd').on("click", function () {
 

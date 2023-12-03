@@ -53,10 +53,9 @@ export default class AccountsController extends Controller {
             this.HttpContext.response.badRequest("UserId is not specified.")
         }
     }
-
-
-
     sendVerificationEmail(user) {
+        // bypass model bindeExtraData wich hide the user verifyCode
+        user = this.repository.findByField("Id", user.Id);
         let html = `
                 Bonjour ${user.Name}, <br /> <br />
                 Voici votre code pour confirmer votre adresse de courriel
@@ -66,7 +65,6 @@ export default class AccountsController extends Controller {
         const gmail = new Gmail();
         gmail.send(user.Email, 'Vérification de courriel...', html);
     }
-
     sendConfirmedEmail(user) {
         let html = `
                 Bonjour ${user.Name}, <br /> <br />
@@ -75,7 +73,6 @@ export default class AccountsController extends Controller {
         const gmail = new Gmail();
         gmail.send(user.Email, 'Courriel confirmé...', html);
     }
-
     //GET : /accounts/verify?id=...&code=.....
     verify() {
         if (this.repository != null) {
@@ -101,6 +98,108 @@ export default class AccountsController extends Controller {
         } else
             this.HttpContext.response.notImplemented();
     }
+    promote() {
+        if (this.repository != null) {
+            let id = this.HttpContext.path.id;
+            let userFound = this.repository.findByField('Id', id);
+            if (userFound) {
+                if (userFound.Authorizations.writeAccess < 2 && userFound.Authorizations.readAccess < 2) {
+                    userFound.Authorizations = Authorizations.admin();
+                    userFound = this.repository.update(userFound.Id, userFound);
+                    if (this.repository.model.state.isValid) {
+                        this.HttpContext.response.updated(true);
+                    } else {
+                        this.HttpContext.response.unprocessable();
+                    }
+                }
+                else {
+                    this.HttpContext.response.alreadyAdmin();
+                }
+            } else {
+                this.HttpContext.response.unprocessable();
+            }
+        }
+        else {
+            this.HttpContext.response.notImplemented();
+        }
+    }
+
+    demote() {
+        if (this.repository != null) {
+            let id = this.HttpContext.path.id;
+            let userFound = this.repository.findByField('Id', id);
+            if (userFound) {
+                if (userFound.Authorizations.writeAccess == 2 && userFound.Authorizations.readAccess == 2) {
+                    userFound.Authorizations = Authorizations.user();
+                    userFound = this.repository.update(userFound.Id, userFound);
+                    if (this.repository.model.state.isValid) {
+                        this.HttpContext.response.updated(true);
+                    } else {
+                        this.HttpContext.response.unprocessable();
+                    }
+                }
+                else {
+                    this.HttpContext.response.unprocessable();
+                }
+            } else {
+                this.HttpContext.response.unprocessable();
+            }
+        }
+        else {
+            this.HttpContext.response.notImplemented();
+        }
+    }
+    block() {
+        if (this.repository != null) {
+            let id = this.HttpContext.path.id;
+            let userFound = this.repository.findByField('Id', id);
+            if (userFound) {
+                if (userFound.Authorizations.writeAccess > 0 && userFound.Authorizations.readAccess > 0) {
+                    userFound.Authorizations = Authorizations.anonymous();
+                    userFound = this.repository.update(userFound.Id, userFound);
+                    if (this.repository.model.state.isValid) {
+                        this.HttpContext.response.updated(true);
+                    } else {
+                        this.HttpContext.response.unprocessable();
+                    }
+                }
+                else {
+                    this.HttpContext.response.unprocessable();
+                }
+            } else {
+                this.HttpContext.response.unprocessable();
+            }
+        }
+        else {
+            this.HttpContext.response.notImplemented();
+        }
+    }
+    unblock() {
+        if (this.repository != null) {
+            let id = this.HttpContext.path.id;
+            let userFound = this.repository.findByField('Id', id);
+            if (userFound) {
+                if (userFound.Authorizations.writeAccess == 0 && userFound.Authorizations.readAccess == 0) {
+                    userFound.Authorizations = Authorizations.user();
+                    userFound = this.repository.update(userFound.Id, userFound);
+                    if (this.repository.model.state.isValid) {
+                        this.HttpContext.response.updated(true);
+                    } else {
+                        this.HttpContext.response.unprocessable();
+                    }
+                }
+                else {
+                    this.HttpContext.response.unprocessable();
+                }
+            } else {
+                this.HttpContext.response.unprocessable();
+            }
+        }
+        else {
+            this.HttpContext.response.notImplemented();
+        }
+    }
+
     //GET : /accounts/conflict?Id=...&Email=.....
     conflict() {
         if (this.repository != null) {
@@ -114,7 +213,6 @@ export default class AccountsController extends Controller {
         } else
             this.HttpContext.response.updated(false);
     }
-
     // POST: account/register body payload[{"Id": 0, "Name": "...", "Email": "...", "Password": "..."}]
     register(user) {
         if (this.repository != null) {
@@ -124,8 +222,7 @@ export default class AccountsController extends Controller {
             let newUser = this.repository.add(user);
             if (this.repository.model.state.isValid) {
                 this.HttpContext.response.created(newUser);
-                this.sendVerificationEmail(user);// Demander s'il faut changer this.sendVerificationEmail(newUser) par this.sendVerificationEmail(user)
-
+                this.sendVerificationEmail(newUser);
             } else {
                 if (this.repository.model.state.inConflict)
                     this.HttpContext.response.conflict(this.repository.model.state.errors);
@@ -170,18 +267,15 @@ export default class AccountsController extends Controller {
         } else
             this.HttpContext.response.unAuthorized();
     }
+
     // GET:account/remove/id
     remove(id) { // warning! this is not an API endpoint
-        if (Authorizations.writeGranted(this.HttpContext, Authorizations.user()))
-        if (this.repository != null) {
-            if (this.HttpContext.path.id) {
-                if (this.repository.remove(id))
-                    this.HttpContext.response.accepted();
-                else
-                    this.HttpContext.response.notFound("Ressource not found.");
-            } else
-                this.HttpContext.response.badRequest("The Id in the request url is rather not specified or syntactically wrong.");
-        } else
-            this.HttpContext.response.notImplemented();
+        if (Authorizations.writeGranted(this.HttpContext, Authorizations.user())) {
+            // this.tokensRepository.keepByFilter(token => token.User.Id != id);
+            let previousAuthorization = this.authorizations;
+            this.authorizations = Authorizations.user();
+            super.remove(id);
+            this.authorizations = previousAuthorization;
+        }
     }
 }

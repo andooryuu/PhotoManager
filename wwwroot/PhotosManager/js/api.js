@@ -137,7 +137,71 @@ class API {
                 data: {},
                 headers: API.getBearerAuthorizationToken(),
                 success: () => {
-                    API.logout();
+                    resolve(true);
+                },
+                error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
+            });
+        });
+    }
+
+    static promoteUser(userId) {
+        API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: serverHost + "/accounts/promote/" + userId,
+                contentType: 'text/plain',
+                type: 'GET',
+                data: {},
+                headers: API.getBearerAuthorizationToken(),
+                success: () => {
+                    resolve(true);
+                },
+                error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
+            });
+        });
+    }
+    static demote(userId) {
+        API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: serverHost + "/accounts/demote/" + userId,
+                contentType: 'text/plain',
+                type: 'GET',
+                data: {},
+                headers: API.getBearerAuthorizationToken(),
+                success: () => {
+                    resolve(true);
+                },
+                error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
+            });
+        });
+    }
+    static unblockUser(userId) {
+        API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: serverHost + "/accounts/unblock/" + userId,
+                contentType: 'text/plain',
+                type: 'GET',
+                data: {},
+                headers: API.getBearerAuthorizationToken(),
+                success: () => {
+                    resolve(true);
+                },
+                error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
+            });
+        });
+    }
+    static blockUser(userId) {
+        API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: serverHost + "/accounts/block/" + userId,
+                contentType: 'text/plain',
+                type: 'GET',
+                data: {},
+                headers: API.getBearerAuthorizationToken(),
+                success: () => {
                     resolve(true);
                 },
                 error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
@@ -155,6 +219,21 @@ class API {
                 success: (data, status, xhr) => {
                     let ETag = xhr.getResponseHeader("ETag");
                     resolve({ data, ETag });
+                },
+                error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
+            });
+        });
+    }
+    static GetAccount(id) {
+        API.initHttpState();
+        return new Promise(resolve => {
+            $.ajax({
+                url: serverHost + "/accounts/index/" + id,
+                contentType: 'application/json',
+                type: 'GET',
+                headers: API.getBearerAuthorizationToken(),
+                success: (user) => {
+                    resolve({ user });
                 },
                 error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
             });
