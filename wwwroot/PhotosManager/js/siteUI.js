@@ -8,6 +8,7 @@ Init_UI();
 let loggedUserId = 0;
 async function Init_UI() {
     renderLoginForm("", "", "");
+    initTimeout(200,renderLoginForm); //
     /*
     if (user == null) {
         renderLoginForm();
@@ -117,6 +118,7 @@ async function verifyCode(code) {
     }
 }
 function renderPhotoManager() {
+    timeout();
     let user = API.retrieveLoggedUser();
 
     if (user.Authorizations.readAccess == 2 && user.Authorizations.writeAccess == 2) {
@@ -132,6 +134,7 @@ function renderPhotoManager() {
 
 }
 function renderVerify(message = "") {
+    timeout(); //
     let messageError = message;
     eraseContent();
     updateHeader("Vérification", "verify");
@@ -178,6 +181,7 @@ function renderError() {
     });
 }
 async function renderModify() {
+    timeout(); //
     let user = await API.retrieveLoggedUser();
     updateHeader("Profil", "modifierProfil", user);
     eraseContent();
@@ -426,6 +430,12 @@ async function renderDeleteAccount(id) {
     })
 }
 async function renderLoginForm(message = "", emailError = "", pwdError = "") {
+    noTimeout(); //
+    if(API.retrieveLoggedUser()!=null) //
+    {
+        API.logout();
+    }
+    
     eraseContent();
     updateHeader("Connexion", "login");
     console.log(message);
@@ -466,6 +476,10 @@ async function renderLoginForm(message = "", emailError = "", pwdError = "") {
     });
     initFormValidation();
     initImageUploaders();
+    if(Email == "[object Object]") ///
+    {
+        Email == "";
+    }
     $('#loginForm').on("submit", function (event) {
         //  let user = getFormData('#loginform')
         let Email = $("#emailLogin").val();
