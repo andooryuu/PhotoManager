@@ -19,12 +19,14 @@ let timeoutCallBack = () => { };
 let infinite = -1;
 let timeLeft = infinite;
 let maxStallingTime = infinite;
+let expired = false;
 
 function initTimeout(stallingTime = infinite, callback = timeoutCallBack) {
     maxStallingTime = stallingTime;
     timeoutCallBack = callback;
     createTimeoutPopup();
     initialized = true;
+    expired = false;
 }
 function noTimeout() {
     clearTimeout(currentTimeouID);
@@ -48,6 +50,7 @@ function startCountdown() {
             } else {
                 $("#popUpMessage").text('Redirection dans ' + (timeBeforeRedirect + timeLeft) + " secondes");
                 if (timeLeft <= -timeBeforeRedirect) {
+                    expired = true;
                     clearTimeout(currentTimeouID);
                     closePopup();
                     timeoutCallBack();

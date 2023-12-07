@@ -23,13 +23,13 @@ async function Init_UI() {
 
 function start_Periodic_Refresh() {
     setInterval(async () => {
-       let etag = await Bookmarks_API.HEAD(); 
-       if (currentETag != etag)  {
+        let etag = await Bookmarks_API.HEAD();
+        if (currentETag != etag) {
             currentETag = etag;
             renderBookmarks();
-       }
-    }, 
-    periodicRefreshPeriod * 1000);
+        }
+    },
+        periodicRefreshPeriod * 1000);
 }
 
 function renderAbout() {

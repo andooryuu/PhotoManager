@@ -8,7 +8,7 @@ Init_UI();
 let loggedUserId = 0;
 async function Init_UI() {
     renderLoginForm("", "", "");
-    initTimeout(200,renderLoginForm); //
+    initTimeout(20, renderLoginForm); //
     /*
     if (user == null) {
         renderLoginForm();
@@ -126,7 +126,7 @@ function renderPhotoManager() {
 
     }
     else {
-        updateHeader("Liste des photos", "photoManager", user);
+        updateHeader("Liste des photos", "photoManagerProfil", user);
     }
 
     eraseContent();
@@ -134,7 +134,7 @@ function renderPhotoManager() {
 
 }
 function renderVerify(message = "") {
-    timeout(); //
+    noTimeout(); //
     let messageError = message;
     eraseContent();
     updateHeader("Vérification", "verify");
@@ -181,9 +181,14 @@ function renderError() {
     });
 }
 async function renderModify() {
-    timeout(); //
+    noTimeout();
     let user = await API.retrieveLoggedUser();
-    updateHeader("Profil", "modifierProfil", user);
+    if (user.Authorizations.readAccess == 2 && user.Authorizations.writeAccess == 2) {
+        updateHeader("Profil", "modifyAdmin", user);
+    }
+    else {
+        updateHeader("Profil", "modifierProfil", user);
+    }
     eraseContent();
     $("#content").append(`
     <form class="form" id="createProfilForm"'>
@@ -301,17 +306,19 @@ function renderUser(User) {
             </div>
         </div>
         <div class="UserCommandPanel">
-            <span class="dodgerblueCmd ${adminIcon}"editUserId="${User.Id}" title="Modifier ${User.Name}"></span>
-            <span class="${blockedIcon}"blockUserId="${User.Id}" title="Modifier ${User.Name}"></span>
-            <span class="fas fa-user-slash goldenrodCmd" deleteUserId="${User.Id}" title="Effacer ${User.Name}"></span>
+            <span class="dodgerblueCmd ${adminIcon} cmdIconVisible"editUserId="${User.Id}" title="Modifier ${User.Name}"></span>
+            <span class="${blockedIcon} cmdIconVisible"blockUserId="${User.Id}" title="Modifier ${User.Name}"></span>
+            <span class="fas fa-user-slash goldenrodCmd cmdIconVisible" deleteUserId="${User.Id}" title="Effacer ${User.Name}"></span>
         </div>
     </div>
 </div>`);
 }
 async function renderManageUser() {
+    // noTimeout();
+    timeout();
     eraseContent();
-    updateHeader("Gestion des usagers", "deleteAccountAdmin");
     let loggedUserId = await API.retrieveLoggedUser().Id;
+    updateHeader("Gestion des usagers", "deleteAccountAdmin");
     let users = await API.GetAccounts();
     if (users != null) {
         if (loggedUserId != null) {
@@ -322,7 +329,6 @@ async function renderManageUser() {
         }
         $('.greenCmd').on("click", async function (event) {
             var id = $(this).attr("blockUserId");
-
             if (await API.blockUser(id)) {
                 renderManageUser();
             }
@@ -370,10 +376,10 @@ async function renderManageUser() {
 
 }
 async function renderDeleteAccountAdmin(id) {
-
+    timeout();
     eraseContent();
-    updateHeader("Retrait de compte", "deleteAccountAdmin");
     let User = await API.GetAccount(id);
+    updateHeader("Retrait de compte", "deleteAccountAdmin", User.user);
     console.log(User)
     if (User != null) {
         $("#content").append(`<div class="content" style="text-align:center">
@@ -407,9 +413,15 @@ async function renderDeleteAccountAdmin(id) {
     }
 }
 async function renderDeleteAccount(id) {
+    timeout();
     let user = API.retrieveLoggedUser();
     eraseContent();
-    updateHeader("Retrait de compte", "deleteAccount", user);
+    if (user.Authorizations.readAccess == 2 && user.Authorizations.writeAccess == 2) {
+        updateHeader("Retrait de compte", "deleteAdmin", user);
+    }
+    else {
+        updateHeader("Retrait de compte", "deleteAccount", user);
+    }
     $("#content").append(`<div class="content" style="text-align:center">
     <h4 style="margin-top:30px">Voulez-vous vraiment effacer votre compte?</h4>
     <div class="form">
@@ -426,16 +438,20 @@ async function renderDeleteAccount(id) {
         renderLoginForm("Votre compte a été retiré", "", "");
     });
     $('#cancelCmd').on("click", function (event) {
-        renderPhotoManager();
+        renderModify();
     })
 }
 async function renderLoginForm(message = "", emailError = "", pwdError = "") {
     noTimeout(); //
-    if(API.retrieveLoggedUser()!=null) //
+    if (API.retrieveLoggedUser() != null) //
     {
         API.logout();
     }
-    
+
+    if (expired) {
+        message = "Votre session a expirée. Veuillez vous reconnecter.";
+        expired = false;
+    }
     eraseContent();
     updateHeader("Connexion", "login");
     console.log(message);
@@ -476,7 +492,7 @@ async function renderLoginForm(message = "", emailError = "", pwdError = "") {
     });
     initFormValidation();
     initImageUploaders();
-    if(Email == "[object Object]") ///
+    if (Email == "[object Object]") ///
     {
         Email == "";
     }
@@ -608,10 +624,14 @@ function updateHeader(title, type, user) {
             renderAbout();
         });
     }
-    else if (type == "photoManager" || type == "modifierProfil" || type == "deleteAccount") {
+    else if (type == "photoManagerProfil" || type == "modifierProfil" || type == "deleteAccount" || type == "aboutUser") {
+        //Changer le HREF lorsqu'il est déployé sur glitch!!!!!!!************
         $('#header').append($(`
             <img id='photoTitleContainer' src='./favicon.ico' /><h2>${title}</h2>
-            <div class="UserAvatarSmall" style="background-image:url('${user.Avatar}')"></div>
+
+            <button id="modifyCmd"  style="all:unset" >
+            <div class="UserAvatarSmall" style="background-image:url('${user.Avatar}')"></div>  
+            </button>
             <div class="dropdown ms-auto">
             <div data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="cmdIcon fa fa-ellipsis-vertical"></i>
@@ -634,18 +654,18 @@ function updateHeader(title, type, user) {
                      Photos par date de création
                 </span>
                 <span class="dropdown-item" id="sortByOwnersCmd">
-                    <i class="menuIcon fa fa-fw mx-2"></i>
-                    <i class="menuIcon fa fa-users mx-2"></i>
+                <i class="menuIcon fa fa-fw mx-2"></i> 
+                <i class="menuIcon fa fa-users mx-2"></i>
                     Photos par créateur
                 </span>
                 <span class="dropdown-item" id="sortByLikesCmd">
-                    <i class="menuIcon fa fa-fw mx-2"></i>
-                    <i class="menuIcon fa-solid fa-heart"></i>
+                <i class="menuIcon fa fa-fw mx-2"></i> 
+                <i class="menuIcon fa fa-heart mx-2"></i>
                     Photos les plus aimées
                 </span>
                 <span class="dropdown-item" id="ownerOnlyCmd">
-                    <i class="menuIcon fa fa-fw mx-2"></i>
-                    <i class="menuIcon fa fa-user mx-2"></i>
+                <i class="menuIcon fa fa-fw mx-2"></i> 
+                <i class="menuIcon fa fa-user mx-2"></i>
                     Mes photos
                 </span>
                 <div class="dropdown-item" id="aboutCmd">
@@ -680,8 +700,11 @@ function updateHeader(title, type, user) {
         $('#aboutCmd').on("click", function () {
             renderAbout();
         });
+        $('#modifyCmd').on("click", function () {
+            renderModify();
+        });
     }
-    else if (type == "photoManagerAdmin" || type == "deleteAccountAdmin") {
+    else if (type == "photoManagerAdmin" || type == "deleteAccountAdmin" || type == "aboutAdmin" || type == "modifyAdmin" || type == "deleteAdmin") {
         let image = "";
         if (type == "deleteAccountAdmin") {
             image = "images/adminLogo.png";
@@ -691,7 +714,9 @@ function updateHeader(title, type, user) {
         $('#header').append($(`
 
             <img id='photoTitleContainer' src='./favicon.ico' /><h2>${title}</h2>
-            <div class="UserAvatarSmall" style="background-image:url('${image}')"></div>
+            <button id="modifyCmd"  style="all:unset" >
+            <div class="UserAvatarSmall" style="background-image:url('${image}')"></div>  
+            </button>
             <div class="dropdown ms-auto">
             <div data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="cmdIcon fa fa-ellipsis-vertical"></i>
@@ -724,8 +749,8 @@ function updateHeader(title, type, user) {
                     Photos par créateur
                 </span>
                 <span class="dropdown-item" id="sortByLikesCmd">
-                    <i class="menuIcon fa fa-fw mx-2"></i>
-                    <i class="menuIcon fa-solid fa-heart"></i>
+                <i class="menuIcon fa fa-fw mx-2"></i> 
+                <i class="menuIcon fa fa-heart mx-2"></i>
                     Photos les plus aimées
                 </span>
                 <span class="dropdown-item" id="ownerOnlyCmd">
@@ -765,14 +790,29 @@ function updateHeader(title, type, user) {
         $('#aboutCmd').on("click", function () {
             renderAbout();
         });
+        $('#modifyCmd').on("click", function () {
+            renderModify();
+        });
     }
 }
 
-function renderAbout() {
+async function renderAbout() {
     timeout();
     saveContentScrollPosition();
     eraseContent();
-    updateHeader("À propos...", "about");
+
+    let user = await API.retrieveLoggedUser();
+    if (user != null) {
+        if (user.Authorizations.readAccess == 2 && user.Authorizations.writeAccess == 2) {
+            updateHeader("À propos...", "aboutAdmin", user);
+        }
+        else {
+            updateHeader("À propos...", "aboutUser", user);
+        }
+    }
+    else {
+        updateHeader("À propos...", "about");
+    }
 
     $("#content").append(
         $(`
