@@ -62,7 +62,6 @@ async function createProfil(profil) {
 
 async function login(Email, Password) {
     let result = await API.login(Email, Password);
-    console.log(API.currentStatus);
     if (!result) {
         if (API.currentStatus == 481) {
             renderLoginForm("", "Courriel Introuvable", "");
@@ -91,8 +90,7 @@ async function login(Email, Password) {
 
 async function verifyLoggedUser() {
     let user = await API.retrieveLoggedUser();
-    console.log(user.VerifyCode);
-    console.log(user.Authorizations);
+
 
     if (user !== null) {
         if (user.Authorizations.writeAccess == 0 && user.Authorizations.writeAccess == 0) {
@@ -380,7 +378,6 @@ async function renderDeleteAccountAdmin(id) {
     eraseContent();
     let User = await API.GetAccount(id);
     updateHeader("Retrait de compte", "deleteAccountAdmin", User.user);
-    console.log(User)
     if (User != null) {
         $("#content").append(`<div class="content" style="text-align:center">
         <h4 style="margin-top:30px">Voulez-vous vraiment effacer cet usager et toutes ses photos?</h4>
@@ -454,7 +451,6 @@ async function renderLoginForm(message = "", emailError = "", pwdError = "") {
     }
     eraseContent();
     updateHeader("Connexion", "login");
-    console.log(message);
     let loginMessage = message;
     let Email = "";
     let EmailError = emailError;
@@ -702,6 +698,13 @@ function updateHeader(title, type, user) {
         });
         $('#modifyCmd').on("click", function () {
             renderModify();
+        });
+        $('.dropdown-item').on("click", function () {
+            $('.dropdown-item').each(function () {
+                $(this).children(":first").removeClass('fa-check');
+            });
+            $(this).children(":first").addClass('fa fa-check mx-2');
+
         });
     }
     else if (type == "photoManagerAdmin" || type == "deleteAccountAdmin" || type == "aboutAdmin" || type == "modifyAdmin" || type == "deleteAdmin") {
