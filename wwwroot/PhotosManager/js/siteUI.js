@@ -8,7 +8,7 @@ Init_UI();
 let loggedUserId = 0;
 async function Init_UI() {
     renderLoginForm("", "", "");
-    initTimeout(20, renderLoginForm); //
+    initTimeout(200, renderLoginForm); //
     /*
     if (user == null) {
         renderLoginForm();
