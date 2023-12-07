@@ -748,7 +748,7 @@ function updateHeader(title, type, user) {
                     <i class="menuIcon fa fa-users mx-2"></i>
                     Photos par créateur
                 </span>
-                <span class="dropdown-item" id="sortByLikesCmd">
+                <span class="dropdown-item"  id="sortByLikesCmd">
                 <i class="menuIcon fa fa-fw mx-2"></i> 
                 <i class="menuIcon fa fa-heart mx-2"></i>
                     Photos les plus aimées
@@ -792,6 +792,13 @@ function updateHeader(title, type, user) {
         });
         $('#modifyCmd').on("click", function () {
             renderModify();
+        });
+        $('.dropdown-item').on("click", function () {
+            $('.dropdown-item').each(function () {
+                $(this).children(":first").removeClass('fa-check');
+            });
+            $(this).children(":first").addClass('fa fa-check mx-2');
+
         });
     }
 }
